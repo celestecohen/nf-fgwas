@@ -76,12 +76,19 @@ def avg_counts_by_annot(
 
     annot_cat = ad.obs[annot].unique().tolist()
 
-    avg_expr_df = pd.DataFrame(index = ad.var_names, columns = annot_cat)
+    avg_expr_df = pd.DataFrame(index = ad.var_names, columns = annot_cat) 
 
     for ac in annot_cat:
         log.info(f"averaging counts for {ac}")
-        mask = ad.obs[annot] == ac
-        avg_counts = ad.X[mask,:].mean(axis=0)
+        mask = (ad.obs[annot] == ac)
+
+        #sanity checks
+        print(type(ad.X))             # confirm it’s sparse (csr_matrix)
+        print(np.sum(mask))           # how many True entries?
+        print(ad[mask].shape)
+
+        #avg_counts = ad.X[mask,:].mean(axis=0)
+        avg_counts =ad[mask].X.mean(axis=0) #supposed to work for sparse matrix
         avg_expr_df[ac] = np.array(avg_counts).flatten()
         
     if add_overall_avg:
@@ -157,6 +164,8 @@ def get_tss_df(host=None, log=logging.getLogger()):
         ]
     ).groupby("Gene name").apply(select_tss).droplevel(1)
     
+    tss_df = pd.read_csv("/lustre/scratch125/cellgen/vento/cc53/pipelines/nf-fgwas/added_data/tss_df.csv",index_col=0)
+
     return tss_df
 
 
@@ -202,6 +211,7 @@ def add_tss_to_df(
 
     log.info(f"getting from host: {host}")
     tss_df = get_tss_df(host=host)
+    tss_df.to_csv("/lustre/scratch125/cellgen/vento/cc53/pipelines/nf-fgwas/added_data/tss_df.csv") 
     
     log.info("adding TSS to DataFrame")
     mrg_df = merge_tss_into_df(
@@ -210,5 +220,5 @@ def add_tss_to_df(
         on = on, 
         merge_with = merge_with,
     )
-    
+
     return mrg_df
