@@ -211,7 +211,7 @@ def add_tss_to_df(
 
     log.info(f"getting from host: {host}")
     tss_df = get_tss_df(host=host)
-    tss_df.to_csv("/lustre/scratch125/cellgen/vento/cc53/pipelines/nf-fgwas/added_data/tss_df.csv") 
+    #tss_df.to_csv("/lustre/scratch125/cellgen/vento/cc53/pipelines/nf-fgwas/added_data/tss_df.csv") 
     
     log.info("adding TSS to DataFrame")
     mrg_df = merge_tss_into_df(

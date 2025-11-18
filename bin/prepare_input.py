@@ -99,7 +99,9 @@ def make_tss_file(h5ad_path, groupby, output_path=None, host="http://www.ensembl
     output_path_gene_names = Path(output_path).parent / f"gene_names_{Path(output_path).name}"
     log.info(f"save tss file with gene names and symbols for reference: '{output_path_gene_names}'")
     out_df.columns = util.celltypes_to_ids(out_df.columns)
-    out_df = out_df[["gene_symbol", "gene_ensembl_id", "chromosome", "tss_loc"] + sorted(out_df.columns[4:].tolist())]
+    #out_df = out_df[["gene_symbol", "gene_ensembl_id", "chromosome", "tss_loc"] + sorted(out_df.columns[4:].tolist())]
+    celltype_cols = [col for col in out_df.columns[4:] if col != "avg_expr"]
+    out_df = out_df[["gene_symbol", "gene_ensembl_id", "chromosome", "tss_loc"] + sorted(celltype_cols) + ["avg_expr"]] #sort but keeps avg_expr at the end
     out_df.to_csv(
         output_path_gene_names, 
         sep = "\t", 
