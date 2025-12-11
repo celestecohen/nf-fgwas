@@ -181,18 +181,55 @@ printf -- "--------------------\n\n"
 
 NFE=`zcat $RNA_INFILE | wc | awk '{print $1}'`
 NCOL=`zcat $RNA_INFILE | head -n 1 | wc | awk '{print $2}'`
-echo $NCOL
-COL=`echo $JOBIND | awk -v TOT=$NCOL '
-	{
-		printf "S,S"; 
-		for(i=3;i<TOT;i++){
-			if(i-2==$1){
-				printf ",N0";
-			}else{
-				printf ",S"
-			}
-		}; 
-		printf ",N0";}'`
+#echo $NCOL
+#COL=`echo $JOBIND | awk -v TOT=$NCOL '
+#	{
+#		printf "S,S"; 
+#		for(i=3;i<TOT;i++){
+#			if(i-2==$1){
+#				printf ",N0";
+#			}else{
+#				printf ",S"
+#			}
+#		}; 
+#		printf ",N0";}'`
+
+# read header
+header=$(head -n 1 $RNA_CELL_TYPES)
+last_col=$(echo $header | awk '{print $NF}')
+
+# flag if last column is avg_expr
+HAS_BASELINE=0
+if [[ "$last_col" == "avg_expr" ]]; then
+    HAS_BASELINE=1
+fi
+
+echo "Has baseline:"
+echo $HAS_BASELINE
+echo "Last column:"
+echo $last_col
+
+COL=`echo $JOBIND | awk -v TOT=$NCOL -v HAS_BASELINE=$HAS_BASELINE '
+{
+    printf "S,S"; 
+    end_col = TOT;
+    if(HAS_BASELINE==1){
+        end_col = TOT - 1;  # if baseline exists, stop before it
+    }
+    for(i=3;i<=end_col;i++){
+        if(i-2==$1){
+            printf ",N0";
+        }else{
+            printf ",S"
+        }
+    };
+    if(HAS_BASELINE==1){
+        printf ",N0";   # add baseline column specification
+    }
+}'`
+
+echo "Col input:"
+echo $COL
 
 ###################################
 #  column line for input_hm file  #

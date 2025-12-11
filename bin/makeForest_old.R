@@ -17,22 +17,6 @@ file_chunks <- file_chunks[!startsWith(file_chunks, "-")]  # remove Rscript opti
 cellt_df <- read.table(cell_type_file, sep="\t", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
 celltype <- colnames(cellt_df)[3:(ncol(cellt_df) - 1)]
 
-# Check if baseline exists
-has_baseline <- tail(colnames(cellt_df), 1) == "avg_expr"
-
-if(has_baseline){
-  celltype <- colnames(cellt_df)[3:(ncol(cellt_df) - 1)]
-  n_params <- 3  # b0, b1, b2
-  hessian_size <- 9  # 3x3 matrix
-} else {
-  celltype <- colnames(cellt_df)[3:ncol(cellt_df)]
-  n_params <- 2  # b0, b1 only
-  hessian_size <- 4  # 2x2 matrix
-}
-
-cat("Has baseline:", has_baseline, "\n")
-cat("Number of parameters:", n_params, "\n")
-cat("Number of cell types:", length(celltype), "\n")
 
 # tss=read.table(tss_file, as.is=T)
 # GWAS=snakemake$wildcards$runID
@@ -60,14 +44,9 @@ for(fc in file_chunks){
 	)
 }
 
-print(res)
-
 i <- 2
 res <- apply(res, 1, function(xx){
-	hessian_start <- n_params + 1
-	hessian_end <- n_params + hessian_size
-	mat <- matrix(xx[hessian_start:hessian_end], n_params)
-	#mat <- matrix(xx[4:12], 3)
+	mat <- matrix(xx[4:12], 3)
 	H <- try(solve(mat))
 
 	if (is.character(H)) {
@@ -114,17 +93,11 @@ Forest <- function(x, q.cutoff=1){
 	col = c((qvalue(tfall[,4], lambda=0)$qval<0.1)+1)[qvalue(tfall[,4], lambda=0)$qval<q.cutoff&tfall[,1]>0]
 	#col = c((p.adjust(tfall[,4],meth="BH")<0.5)+1)[qvalue(tfall[,4], lambda=0)$qval<q.cutoff&tfall[,1]>0]
 	#tfall=tfall[qvalue(tfall[,4], lambda=0)$qval<q.cutoff&tfall[,1]>0,]
-	tfall=tfall[p.adjust(tfall[,4],meth="BH")<q.cutoff&tfall[,1]>0,,drop=FALSE]
+	tfall=tfall[p.adjust(tfall[,4],meth="BH")<q.cutoff&tfall[,1]>0,]
 	col = col[rev(order(tfall[,1]))]
-	tfall = tfall[rev(order(tfall[,1])),,drop=FALSE]
-	if(is.null(rownames(tfall))){
-	  rownames(tfall)=seq_len(nrow(tfall))
-	 }
-	tfall=tfall[rownames(tfall)!="empty",,drop=FALSE]
-	if(nrow(tfall)==0){
-	  plot.new()
-	  return()
-	}
+	tfall = tfall[rev(order(tfall[,1])),]
+	if(is.null(rownames(tfall))){rownames(tfall)=seq(nrow(tfall))}
+	tfall=tfall[rownames(tfall)!="empty",]
 	xlim=c(tfall[,2:3])
 	if(xlim[1]>0){xlim[1]=0}
 	xlim=range(xlim[xlim>(-Inf)&xlim<Inf&!is.na(xlim)])
